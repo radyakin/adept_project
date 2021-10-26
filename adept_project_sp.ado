@@ -1,4 +1,7 @@
-clear all
+// Sergiy Radyakin, The World Bank, 2021 
+
+// Programmatic creation of ADePT SP project files from Stata
+// Requires python (for base64 encoding).
 
 program define base64string, sclass
     version 16.0
@@ -8,8 +11,6 @@ program define base64string, sclass
     local b64=substr(`"`b64'"',3,strlen(`"`b64'"')-3)
     sreturn local result=`"`b64'"'
 end
-
-// python: import base64; print(str(base64.b64decode("SU5EU0k=")))
 
 program define adept_project_sp
     version 16.0
@@ -175,27 +176,5 @@ program define adept_project_sp
       
     file close `fh'    
 end
-
-adept_project_sp using "C:\temp\sp_proj1.adept", head("relation==1") ///
-    age("age") gender("gender") educat("educ_completed") status("sector") ///
-    customind("occupation") cinlbl("Occupation") hhid(" hhid") ///
-    urban("location") hhweight("hhweight") region("region") ///
-    ethnic("ethnicity_head") pline(" ae_lpovline ae_hpovline") ///
-    totcons("hhexp") adeq("aesize") plinetype("abs") numrpline("10 20") ///
-    filelbl("2007") indfile("T:\Tatiana\2011\ADePT_Projects\adept_blg.dta") ///
-    filter("") ///
-    program(INDSI retire_pension_amt "Old age pension") ///
-    program(INDSA social_pension_amt "Social assistance") ///
-    program(INDSI disability_pay_amt "Disability pension/allowance") ///
-    program(INDSI legacy_pension_amt "Survivorship pension") ///
-    program(INDLM unemploy_allow_amt "Unemployment benefit") ///
-    program(INDSA mother_allow_amt   "Child allowance, up to 2 yo") ///
-    program(INDSA other_allow_amt    "Other family allowances") ///
-    program(INDSA child_allow_amt    "Monthly child allowance") ///
-    program(INDSA heating_allow_amt  "Heating allowance") ///
-    program(INDSA gmi_amt            "Guaranteed minimum income") ///
-    program(INDSA other_benefit_amt  "Other sa benefits") ///
-    program(HHDRM remit_inc          "Remittances")
 	
 // END OF FILE
-    
