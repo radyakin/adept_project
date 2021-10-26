@@ -1,30 +1,13 @@
-clear all
+// Sergiy Radyakin, The World Bank, 2021
 
-version 16.0
+// Add a particular project to the database holding multiple projects.
+// Main table should be in the current frame.
+// Programs table should be in the PROGS frame.
 
-program define basecreate
-    version 16.0
-    syntax
-    clear
-    set obs 1
-    foreach v in hhid age gender educat status customind cinlbl urban hhweight region ethnic pline rpline plinetype numrpline pretradj wrquants rgnquant totcons adeq watype mv_grid recmiss usesvy fayvalue chkb_fay chkb_mse methodse svystrat cmbo_sngle filter f_path f_label f_level {
-        quietly generate `v'=""
-    }
-    generate projid=.
-    describe
+// ProjectID is determined automatically as: 
+// (largest_used_projid)+1, or 1 if no projects exist in the base
 
-    pwf
-    local cf=r(currentframe)
-    frame create PROGS
-    frame change PROGS
-    foreach v in ptype pvar plabel {
-        quietly generate `v'=""
-    }
-    generate projid=.
-    order projid
-    describe
-    frame change `cf'
-end
+// Requires: python, configparser
 
 python
 
@@ -32,11 +15,12 @@ from sfi import Macro, Data, SFIToolkit
 import base64
 import configparser
 
-def readproj(fn, n):
+def readproj(fn, projid):
     config = configparser.ConfigParser()
     config.read(fn)
-
-    Data.storeAt("projid",n,n+1)
+    Data.addObs(1)
+    n=Data.getObsTotal()-1 # // Index of the last observation
+    Data.storeAt("projid",n,projid)
     Data.storeAt("hhid",n, config.get('INPUTS', 'HHID'))
     Data.storeAt("age",n, config.get('INPUTS', 'AGE'))
     Data.storeAt("gender",n, config.get('INPUTS', 'GENDER'))
@@ -71,9 +55,9 @@ def readproj(fn, n):
     Data.storeAt("filter",n, config.get('INPUTS','Filter'))
 
     v=config.get('FILES', 'value')
-    Data.storeAt("f_level",0, v.split()[0])
-    Data.storeAt("f_label",0, str(base64.b64decode(v.split()[2]))[2:-1])
-    Data.storeAt("f_path",0, str(base64.b64decode(v.split()[3]))[2:-1])
+    Data.storeAt("f_level",n, v.split()[0])
+    Data.storeAt("f_label",n, str(base64.b64decode(v.split()[2]))[2:-1])
+    Data.storeAt("f_path",n, str(base64.b64decode(v.split()[3]))[2:-1])
 
     fc="default"
     fm="PROGS"
@@ -86,22 +70,21 @@ def readproj(fn, n):
       Data.storeAt("ptype",j,str(base64.b64decode(prog1[0]))[2:-1])
       Data.storeAt("pvar",j,str(base64.b64decode(prog1[1]))[2:-1])
       Data.storeAt("plabel",j,str(base64.b64decode(prog1[2]))[2:-1])
-      Data.storeAt("projid",j,n+1)
+      Data.storeAt("projid",j,projid)
     SFIToolkit.stata("frame change "+fc)
 
 end
 
-program define adept_readproj
+program define adept_sp_projbase_add
     version 16.0
     syntax , projfile(string)
-    python: import __main__; __main__.readproj("`projfile'", 0)
+    //python: import __main__; __main__.readproj("`projfile'", 0)
+    
+    summarize projid
+    if (r(max)!=.) local newprojid=r(max)+1
+    else local newprojid=1
+    
+    python: readproj("`projfile'", `newprojid')
 end
 
-
-basecreate
-adept_readproj , projfile("c:/Temp/adept_temp/example/sp3333.adept")
-
-list
-frame PROGS: list
-
-// end of file
+// END OF FILE
