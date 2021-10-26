@@ -3,11 +3,10 @@
 // Programmatic creation of ADePT SP project files from Stata
 // Requires python (for base64 encoding).
 
-program define base64string, sclass
+program define _base64string, sclass
     version 16.0
     syntax , string(string)
     python: from sfi import Macro; import base64; Macro.setLocal("b64",str(base64.b64encode(Macro.getLocal("string").encode("utf-8"))))
-    // display `"`b64'"'
     local b64=substr(`"`b64'"',3,strlen(`"`b64'"')-3)
     sreturn local result=`"`b64'"'
 end
@@ -74,10 +73,10 @@ program define adept_project_sp
              }
              
              if missing(`"`filelbl'"') local filelbl="Data1"
-             base64string, string(`"`filelbl'"')
+             _base64string, string(`"`filelbl'"')
              local filelbl=s(result)
              
-             base64string, string(`"`file'"')
+             _base64string, string(`"`file'"')
              local file=s(result)
     
     local progstr=""
@@ -104,11 +103,11 @@ program define adept_project_sp
 
         display as text `"`ptype'"' _col(10) `"`pvar'"'as result  _col(30) `"`plbl'"'
         
-        base64string, string(`"`ptype'"')
+        _base64string, string(`"`ptype'"')
         local ptype=s(result)
-        base64string, string(`"`pvar'"')
+        _base64string, string(`"`pvar'"')
         local pvar=s(result)
-        base64string, string(`"`plbl'"')
+        _base64string, string(`"`plbl'"')
         local plbl=s(result)
         
         local progstr=`"`progstr'%`ptype',`pvar',`plbl'"'
