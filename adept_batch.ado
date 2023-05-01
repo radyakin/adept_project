@@ -13,11 +13,19 @@ program define adept_batch
 	    [suppressse] ///
 	    [run(string)]
 
+	display as text "{break}"
+	
+	if (`"`batchfile'"'=="") & (`"`run'"'=="") {
+		display as error "Error! Options {it:batchfile()} and {it:run()} cannot be both missing at the same time!"
+		display as text "Specify the option {it:run()} pointing to the ADePT executable to run the batch task immediately, or specify the option {it:batchfile()} pointing to a new {it:*.ini} file somewhere to create an ADePT batch task file to be used later on."
+		exit 199
+	}	
+	
 	local se=!missing("`suppressse'")
 	if (`"`batchfile'"'=="") tempfile batchfile
 	
 	tempname fw
-	file open `fw' using `"`batchfile'"', write text replace
+	quietly file open `fw' using `"`batchfile'"', write text replace
 	    file write `fw' `"[ADEPT_BATCH]"' _n
 	    file write `fw' `"Project="`projectfile'""' _n
 	    file write `fw' `"Output="`outputfile'""' _n
@@ -29,19 +37,20 @@ program define adept_batch
 		
 		capture confirm file `"`run'"'
 		if _rc {
-			display as error `"ADePT executable file not present: {result:`run'}"'
+			display as error `"Error! ADePT executable file not present: {result:`run'}"'
 			exit 601
 		}
 		
 		capture confirm file `"`projectfile'"'
 		if _rc {
-			display as error `"ADePT project file not present: {result:`run'}"'
+			display as error `"Error! ADePT project file not present: {result:`run'}"'
+			display as text `"An ADePT project file can be created with a command {cmd:adept_project_sp} (or equivalent for a different ADePT module)."'
 			exit 601
 		}
 		
 		capture confirm file `"`outputfile'"'
 		if !_rc {
-			display as text `"Output file already exists, deleting: {result:`outputfile'}"'
+			display as result `"Warning! Output file already exists, deleting: {result:`outputfile'}"'
 			erase `"`outputfile'"'
 		}
 		
@@ -58,10 +67,10 @@ program define adept_batch
 		
 	    capture confirm file `"`outputfile'"'
 	    if _rc {
-			display as error "Output file was not produced."
+			display as error "Error! Output file was not produced."
 	    }
 	    else {
-			display as text `"Click {browse "`outputfile'" :here} to open the output file."'
+			display as text `"Success! Click {browse "`outputfile'" :here} to open the output file."'
 	    }
 	}
 
