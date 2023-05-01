@@ -26,14 +26,42 @@ program define adept_batch
 	file close `fw'
 	
 	if !missing(`"`run'"') {
+		
+		capture confirm file `"`run'"'
+		if _rc {
+			display as error `"ADePT executable file not present: {result:`run'}"'
+			exit 601
+		}
+		
+		capture confirm file `"`projectfile'"'
+		if _rc {
+			display as error `"ADePT project file not present: {result:`run'}"'
+			exit 601
+		}
+		
+		capture confirm file `"`outputfile'"'
+		if !_rc {
+			display as text `"Output file already exists, deleting: {result:`outputfile'}"'
+			erase `"`outputfile'"'
+		}
+		
+		// Test if output can be created at the specified path:
+		tempname fh
+		file open `fh' using `"`outputfile'"', write text replace
+			file write `fh' "TEST" _n
+		file close `fh'
+		
+		confirm file `"`outputfile'"'
+		erase `"`outputfile'"'		
+		
 	    shell "`run'" "`batchfile'"
 		
 	    capture confirm file `"`outputfile'"'
 	    if _rc {
-		display as error "Output file was not produced."
+			display as error "Output file was not produced."
 	    }
 	    else {
-		display as text `"Click {browse "`outputfile'" :here} to open the output file."'
+			display as text `"Click {browse "`outputfile'" :here} to open the output file."'
 	    }
 	}
 
